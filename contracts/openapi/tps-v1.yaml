@@ -1,0 +1,119 @@
+openapi: 3.0.3
+info:
+  title: RMS Integration API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+paths:
+  /v1/device-events:
+    post:
+      summary: Ingest device telemetry event
+      operationId: ingestDeviceEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceEvent'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAck'
+        default:
+          $ref: '#/components/responses/Problem'
+  /v1/dicom/webhook:
+    post:
+      summary: Ingest DICOM metadata webhook payload
+      operationId: ingestDicomMetadata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DicomWebhook'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAck'
+        default:
+          $ref: '#/components/responses/Problem'
+components:
+  responses:
+    Problem:
+      description: RFC7807 Problem Details
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    DeviceEvent:
+      type: object
+      required: [correlation_id, event_id, device_id, event_type, payload, occurred_at]
+      properties:
+        correlation_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+        device_id:
+          type: string
+        event_type:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        occurred_at:
+          type: string
+          format: date-time
+    DicomWebhook:
+      type: object
+      required: [correlation_id, study_instance_uid]
+      properties:
+        correlation_id:
+          type: string
+          format: uuid
+        study_instance_uid:
+          type: string
+        patient_id:
+          type: string
+        modality:
+          type: string
+        study_date:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+    EventAck:
+      type: object
+      required: [status, correlation_id, deduplicated]
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+        correlation_id:
+          type: string
+          format: uuid
+        deduplicated:
+          type: boolean
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
