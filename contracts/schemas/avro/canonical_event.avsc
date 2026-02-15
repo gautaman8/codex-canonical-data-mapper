@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "CanonicalEvent",
+  "namespace": "com.rms.integration",
+  "fields": [
+    {"name": "correlation_id", "type": "string"},
+    {"name": "event_type", "type": "string"},
+    {"name": "occurred_at", "type": "string"},
+    {"name": "source", "type": "string"},
+    {"name": "payload", "type": "string"}
+  ]
+}
