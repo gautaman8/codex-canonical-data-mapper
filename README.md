@@ -16,7 +16,6 @@ Local-first middleware scaffolding for the healthcare integration platform.
 - `infrastructure/local/` local docker-compose for Kafka/Postgres/Orthanc
 - `docs/architecture/` architecture plans and verification checklist
 - `docs/adr/` architecture decision records
-- `scripts/poc_e2e.sh` end-to-end local POC validation with sample DICOM
 
 ## Quick start (local)
 1. `docker compose -f infrastructure/local/docker-compose.yml up -d`
@@ -27,22 +26,7 @@ Local-first middleware scaffolding for the healthcare integration platform.
 ## POC endpoints
 - `POST /v1/device-events`
 - `POST /v1/dicom/webhook`
-- `POST /v1/dicom/orthanc/sync?correlation_id=<uuid>`
 - `GET /health`
-
-## Orthanc DICOM POC validation
-The local validation script covers the required flow with sample data:
-1. Starts Postgres + Kafka + Orthanc.
-2. Generates a sample DICOM file.
-3. Uploads the file to Orthanc (`POST /instances`).
-4. Middleware queries Orthanc (`GET /studies` + `GET /studies/{id}`).
-5. Persists metadata to `dicom_studies` and canonical event to `canonical_events`.
-6. Publishes DICOM metadata event to Kafka topics.
-
-Run:
-```bash
-./scripts/poc_e2e.sh
-```
 
 ## Notes
 - Raw DICOM is designed to be stored in object storage only (GCS in target architecture; local placeholder in code).

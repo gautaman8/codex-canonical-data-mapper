@@ -5,26 +5,6 @@ info:
 servers:
   - url: https://api.example.com
 paths:
-  /v1/dicom/orthanc/sync:
-    post:
-      summary: Pull latest study metadata from Orthanc and ingest
-      operationId: syncLatestOrthancStudy
-      parameters:
-        - in: query
-          name: correlation_id
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventAck'
-        default:
-          $ref: '#/components/responses/Problem'
   /v1/device-events:
     post:
       summary: Ingest device telemetry event

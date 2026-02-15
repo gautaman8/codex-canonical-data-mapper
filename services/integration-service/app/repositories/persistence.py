@@ -1,5 +1,4 @@
-import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
@@ -9,7 +8,7 @@ from app.core.config import settings
 
 @dataclass
 class PersistenceRepository:
-    engine: Engine = field(default_factory=lambda: create_engine(settings.postgres_dsn, pool_pre_ping=True))
+    engine: Engine = create_engine(settings.postgres_dsn, pool_pre_ping=True)
 
     def persist_canonical_event(self, correlation_id: str, event_type: str, payload: dict) -> None:
         with self.engine.begin() as connection:
@@ -23,7 +22,7 @@ class PersistenceRepository:
                 {
                     "correlation_id": correlation_id,
                     "event_type": event_type,
-                    "payload": json.dumps(payload),
+                    "payload": str(payload).replace("'", '"'),
                 },
             )
 
@@ -60,7 +59,7 @@ class PersistenceRepository:
                     "patient_id": payload.get("patient_id"),
                     "modality": payload.get("modality"),
                     "study_date": payload.get("study_date"),
-                    "metadata": json.dumps(payload.get("metadata", {})),
+                    "metadata": str(payload.get("metadata", {})).replace("'", '"'),
                     "correlation_id": payload["correlation_id"],
                 },
             )

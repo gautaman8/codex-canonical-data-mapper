@@ -1,18 +1,15 @@
 import logging
-from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from app.models.events import DeviceEventIn, DicomWebhookIn, EventAck
 from app.repositories.persistence import PersistenceRepository
 from app.services.messaging import MessagingService
-from app.services.orthanc import OrthancService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 persistence = PersistenceRepository()
 messaging = MessagingService()
-orthanc = OrthancService()
 
 
 @router.get("/health")
@@ -27,10 +24,9 @@ def ingest_device_event(payload: DeviceEventIn) -> EventAck:
     if not inserted:
         return EventAck(status="accepted", correlation_id=payload.correlation_id, deduplicated=True)
 
-    data = payload.model_dump(mode="json")
-    persistence.persist_canonical_event(str(payload.correlation_id), "device", data)
-    messaging.publish("device-events", payload.device_id, data)
-    messaging.publish("canonical-data", payload.device_id, data)
+    persistence.persist_canonical_event(str(payload.correlation_id), "device", payload.model_dump())
+    messaging.publish("device-events", payload.device_id, payload.model_dump(mode="json"))
+    messaging.publish("canonical-data", payload.device_id, payload.model_dump(mode="json"))
 
     logger.info(
         "device_event_ingested",
@@ -60,20 +56,3 @@ def ingest_dicom_metadata(payload: DicomWebhookIn) -> EventAck:
         },
     )
     return EventAck(status="accepted", correlation_id=payload.correlation_id)
-
-
-@router.post("/v1/dicom/orthanc/sync", status_code=status.HTTP_202_ACCEPTED)
-def sync_latest_study_from_orthanc(correlation_id: UUID) -> EventAck:
-    try:
-        studies = orthanc.list_studies()
-        if not studies:
-            raise HTTPException(status_code=404, detail="No studies available in Orthanc")
-
-        metadata = orthanc.fetch_study_metadata(studies[-1])
-        dicom_payload = DicomWebhookIn(correlation_id=correlation_id, **metadata)
-        return ingest_dicom_metadata(dicom_payload)
-    except HTTPException:
-        raise
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("orthanc_sync_failed", extra={"correlation_id": str(correlation_id)})
-        raise HTTPException(status_code=502, detail=f"Orthanc sync failed: {exc}") from exc
